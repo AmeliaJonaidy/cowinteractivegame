@@ -7,13 +7,15 @@ export default function MysteryBar({
   id,
   school,
   displayScore,
+  minScore = 0,
   maxScore,
   isLocking,
   isRevealing,
   showStats = false,
 }) {
   const [hovered, setHovered] = useState(false);
-  const heightPct = Math.max(4, Math.min(100, (displayScore / maxScore) * 100));
+  const span = Math.max(1, maxScore - minScore);
+  const heightPct = Math.max(4, Math.min(100, ((displayScore - minScore) / span) * 100));
 
   return (
     <motion.div
@@ -37,7 +39,7 @@ export default function MysteryBar({
         </motion.div>
       )}
 
-      <div className="relative h-[26rem] w-20 flex items-end overflow-hidden rounded-t-md border border-white/10 bg-white/5 shadow-[0_0_28px_rgb(79_209_197_/0.08)]">
+      <div className="relative h-[26rem] w-20 flex items-end overflow-hidden">
         <motion.div
           className={`w-full ${
             isRevealing || showStats
@@ -47,7 +49,13 @@ export default function MysteryBar({
               : "bg-telemetry/60"
           }`}
           animate={{ height: `${heightPct}%` }}
-          transition={{ duration: isLocking ? 0.15 : 0.35, ease: "easeInOut" }}
+          transition={
+            isLocking
+              ? { duration: 0.15, ease: "easeInOut" }
+              : isRevealing
+              ? { type: "spring", stiffness: 280, damping: 20, mass: 0.7 }
+              : { duration: 0.35, ease: "easeInOut" }
+          }
         />
       </div>
       {showStats && (

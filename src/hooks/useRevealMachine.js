@@ -25,15 +25,47 @@ function getRankings(schools) {
     .map((s, i) => ({ ...s, rank: i + 1 }));
 }
 
-function jitterAroundRankLine(value, scoreCeiling, activeCount) {
-  const closenessToWinner = 1 - (activeCount - 1) / 4;
-  const swing = Math.max(28, scoreCeiling * (0.5 - closenessToWinner * 0.18));
-  const drift = (Math.random() - 0.5) * swing;
-  const surge = Math.random() < 0.4 ? Math.random() * swing * 0.7 : 0;
-  const floor = Math.max(4, value - swing * (0.55 - closenessToWinner * 0.25));
-  const ceiling = Math.max(scoreCeiling, value + swing * 0.35);
+// Picks a "nice" min/max for the visual domain, zoomed into the actual
+// score range instead of always starting at 0 — mirrors the axis domain
+// used in Leaderboard.jsx so the pre-reveal wobble stays in sync with
+// what the chart will actually show.
+function niceDomain(minValue, maxValue, tickCount = 5) {
+  const safeMin = Math.min(minValue, maxValue);
+  const safeMax = Math.max(minValue, maxValue, safeMin + 1);
+  const rawStep = (safeMax - safeMin) / tickCount;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
 
-  return Math.max(floor, Math.min(ceiling, value + drift + surge));
+  let niceResidual;
+  if (residual > 5) niceResidual = 10;
+  else if (residual > 2) niceResidual = 5;
+  else if (residual > 1) niceResidual = 2;
+  else niceResidual = 1;
+
+  const step = niceResidual * magnitude;
+  const niceMin = Math.max(0, Math.floor(safeMin / step) * step);
+  const niceMax = Math.ceil(safeMax / step) * step;
+  return { niceMin, niceMax };
+}
+
+// Single 200ms hop for a bar's displayed score. Steps from the previous
+// value instead of picking a fresh random number, so bars glide instead
+// of teleporting, while still not hinting at the real underlying score.
+// Uses big hops across the FULL [axisMin, axisMax] domain (not a tight
+// band around the target line), so it genuinely rockets up toward the
+// top of the axis and back down — real drama, not a small wobble.
+function jitterStep(prevValue, targetLine, axisMin, axisMax) {
+  const domainSpan = Math.max(1, axisMax - axisMin);
+  const maxStep = domainSpan * 0.24; // big enough to cross most of the axis in a couple of ticks
+
+  const step = (Math.random() - 0.5) * 2 * maxStep;
+  let next = prevValue + step;
+
+  // light pull back toward the rank line so it trends the right direction
+  // over time, weak enough that it still visits the extremes of the axis
+  next += (targetLine - next) * 0.03;
+
+  return Math.max(axisMin, Math.min(axisMax, next));
 }
 
 function sameScoreLine(ids, score) {
@@ -74,13 +106,13 @@ function getSavedState() {
   }
 }
 
-function rankLineScore(scoreCeiling, activeCount) {
+function rankLineScore(axisMin, axisMax, activeCount) {
   const totalSchools = 5;
   const revealIndex = totalSchools - activeCount;
   const progress = revealIndex / Math.max(1, totalSchools - 1);
   const visualPct = 0.22 + progress * 0.72;
 
-  return scoreCeiling * visualPct;
+  return axisMin + (axisMax - axisMin) * visualPct;
 }
 
 function reducer(state, action) {
@@ -120,13 +152,16 @@ function reducer(state, action) {
 export function useRevealMachine(schools) {
   const [state, dispatch] = useReducer(reducer, initialState, getSavedState);
   const jitterInterval = useRef(null);
+  const latestScoresRef = useRef({});
   const rankings = getRankings(schools);
 
   const activeSorted = rankings
     .filter((s) => !state.revealedIds.includes(s.id))
     .sort((a, b) => a.total - b.total);
   const activeIds = activeSorted.map((s) => s.id);
-  const scoreCeiling = Math.max(...rankings.map((s) => s.total), 80);
+  const rawMinScore = Math.min(...rankings.map((s) => s.total));
+  const rawMaxScore = Math.max(...rankings.map((s) => s.total), 80);
+  const { niceMin: axisMin, niceMax: axisMax } = niceDomain(rawMinScore, rawMaxScore, 5);
 
   const isWobbling = state.phase === PHASES.FLUCTUATING;
 
@@ -134,26 +169,38 @@ export function useRevealMachine(schools) {
     window.localStorage.setItem("mission-2-reveal-state", JSON.stringify(state));
   }, [state]);
 
+  // Drives the per-tick jitter animation while a phase is fluctuating.
   useEffect(() => {
     if (!isWobbling) return;
     const target = activeSorted[0];
     if (!target) return;
-    const targetLine = rankLineScore(scoreCeiling, activeIds.length);
+    const targetLine = rankLineScore(axisMin, axisMax, activeIds.length);
+
+    // seed so the very first tick steps from somewhere sensible, not from nothing
+    activeIds.forEach((id) => {
+      if (latestScoresRef.current[id] == null) {
+        latestScoresRef.current[id] = targetLine;
+      }
+    });
 
     soundManager.startRoboticLoop();
     jitterInterval.current = setInterval(() => {
       const next = {};
       activeIds.forEach((id) => {
-        next[id] = jitterAroundRankLine(targetLine, scoreCeiling, activeIds.length);
+        const prev = latestScoresRef.current[id] ?? targetLine;
+        const value = jitterStep(prev, targetLine, axisMin, axisMax);
+        latestScoresRef.current[id] = value;
+        next[id] = value;
       });
       dispatch({ type: "TICK_JITTER", payload: next });
     }, 200);
+
     return () => {
       clearInterval(jitterInterval.current);
       soundManager.stopRoboticLoop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isWobbling, activeIds.join(","), scoreCeiling, activeSorted[0]?.id]);
+  }, [isWobbling, activeIds.join(","), axisMin, axisMax, activeSorted[0]?.id]);
 
   const startSequence = useCallback(() => {
     if (state.phase !== PHASES.READY) return;
@@ -168,21 +215,29 @@ export function useRevealMachine(schools) {
   const resetSequence = useCallback(() => {
     soundManager.stopRoboticLoop();
     window.localStorage.removeItem("mission-2-reveal-state");
+    latestScoresRef.current = {};
     dispatch({ type: "RESET_SEQUENCE" });
   }, []);
 
+  // --- Phase timeline -----------------------------------------------------
+  // Each phase owns exactly one timer, in its own effect, keyed only on the
+  // phase it cares about. This matters: previously all of these lived in a
+  // single effect keyed on state.phase, which meant that the moment a
+  // dispatch changed the phase, React would tear down that effect instance
+  // (running its cleanup) *before* the nested timeout for the next
+  // transition had a chance to fire — clearing a timer that was supposed to
+  // survive. That's what caused the "stuck in LOCKING COORDINATES" hang.
+  // Splitting these out means each timer is only ever cleared by its own
+  // phase's cleanup, never by a sibling transition.
+
+  // FLUCTUATING -> LOCKING
   useEffect(() => {
     if (state.phase !== PHASES.FLUCTUATING) return;
-
     const target = activeSorted[0];
     if (!target) return;
-    const targetLine = rankLineScore(scoreCeiling, activeIds.length);
-    let t2;
-    let t3;
-    let t4;
-    let t5;
+    const targetLine = rankLineScore(axisMin, axisMax, activeIds.length);
 
-    const t1 = setTimeout(() => {
+    const t = setTimeout(() => {
       clearInterval(jitterInterval.current);
       soundManager.stopRoboticLoop();
       dispatch({
@@ -192,34 +247,52 @@ export function useRevealMachine(schools) {
           displayScores: sameScoreLine(activeIds, targetLine),
         },
       });
-
-      t2 = setTimeout(() => {
-        const isLast = activeSorted.length === 1;
-        if (isLast) {
-          dispatch({ type: "START_FINALE" });
-          soundManager.playMoo();
-          soundManager.playApplause();
-          t3 = setTimeout(() => dispatch({ type: "FINALE_DONE" }), FINALE_HOLD_MS);
-        } else {
-          dispatch({ type: "START_REVEAL" });
-          soundManager.playApplause();
-          t4 = setTimeout(() => {
-            dispatch({ type: "COMMIT_REVEAL" });
-            t5 = setTimeout(() => dispatch({ type: "REFOCUS_DONE" }), REFOCUS_MS);
-          }, REVEAL_HOLD_MS);
-        }
-      }, LOCK_MS);
     }, FLUCTUATE_MS);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
-    };
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, state.revealedIds.length]);
+  }, [state.phase, activeIds.join(","), axisMin, axisMax, activeSorted[0]?.id]);
+
+  // LOCKING -> REVEALING or FINALE
+  useEffect(() => {
+    if (state.phase !== PHASES.LOCKING) return;
+    const isLast = activeSorted.length === 1;
+
+    const t = setTimeout(() => {
+      if (isLast) {
+        dispatch({ type: "START_FINALE" });
+        soundManager.playMoo();
+        soundManager.playApplause();
+      } else {
+        dispatch({ type: "START_REVEAL" });
+        soundManager.playApplause();
+      }
+    }, LOCK_MS);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase]);
+
+  // REVEALING -> COMMIT_REVEAL
+  useEffect(() => {
+    if (state.phase !== PHASES.REVEALING) return;
+    const t = setTimeout(() => dispatch({ type: "COMMIT_REVEAL" }), REVEAL_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  // REFOCUSING -> REFOCUS_DONE (back to FLUCTUATING for the next school)
+  useEffect(() => {
+    if (state.phase !== PHASES.REFOCUSING) return;
+    const t = setTimeout(() => dispatch({ type: "REFOCUS_DONE" }), REFOCUS_MS);
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  // FINALE -> FINALE_DONE
+  useEffect(() => {
+    if (state.phase !== PHASES.FINALE) return;
+    const t = setTimeout(() => dispatch({ type: "FINALE_DONE" }), FINALE_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [state.phase]);
 
   return {
     phase: state.phase,

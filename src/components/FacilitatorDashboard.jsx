@@ -8,6 +8,7 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
   const [selectedId, setSelectedId] = useState(schoolIds[0]);
   const [form, setForm] = useState({ normalCows: "", wagyuCows: "", parts: "" });
   const [savedMsg, setSavedMsg] = useState("");
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const previewTotal = useMemo(() => {
     return calcTotal(
@@ -42,6 +43,19 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
       },
     }));
     setSavedMsg(`Saved for ${selectedId} — total ${previewTotal} pts`);
+  }
+
+  function handleResetScores() {
+    setSchools((prev) => {
+      const next = {};
+      for (const id of Object.keys(prev)) {
+        next[id] = { ...prev[id], normalCows: 0, wagyuCows: 0, parts: 0 };
+      }
+      return next;
+    });
+    setForm({ normalCows: "", wagyuCows: "", parts: "" });
+    setSavedMsg("");
+    setConfirmingReset(false);
   }
 
   const { phase, isDone, PHASES } = machine;
@@ -106,7 +120,33 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
 
       {/* Current entries at a glance */}
       <div className="rounded-2xl bg-space-panel/40 border border-white/5 p-4 mb-6">
-        <h2 className="font-display font-bold text-xs text-text-dim mb-3 tracking-wide">CURRENT ENTRIES</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-bold text-xs text-text-dim tracking-wide">CURRENT ENTRIES</h2>
+          {!confirmingReset ? (
+            <button
+              onClick={() => setConfirmingReset(true)}
+              className="font-mono text-[11px] font-bold text-red-400/80 hover:text-red-400 underline"
+            >
+              Reset All Scores
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] text-text-dim">Sure?</span>
+              <button
+                onClick={handleResetScores}
+                className="rounded-md bg-red-500/90 px-2 py-1 font-mono text-[11px] font-bold text-white"
+              >
+                Yes, reset
+              </button>
+              <button
+                onClick={() => setConfirmingReset(false)}
+                className="rounded-md border border-white/15 px-2 py-1 font-mono text-[11px] text-text-dim"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
         <div className="space-y-1">
           {schoolIds.map((id) => (
             <div key={id} className="flex justify-between font-mono text-xs">
