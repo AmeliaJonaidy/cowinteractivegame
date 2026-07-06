@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Leaderboard from "./components/Leaderboard";
 import FacilitatorDashboard from "./components/FacilitatorDashboard";
 import { initialSchools } from "./data/schools";
@@ -21,7 +21,7 @@ function App() {
   }, [schools]);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="bg-space-bg min-h-screen">
         <Routes>
           <Route path="/" element={<Leaderboard schools={schools} machine={machine} />} />
@@ -31,7 +31,7 @@ function App() {
           />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

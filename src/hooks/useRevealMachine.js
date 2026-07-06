@@ -174,6 +174,12 @@ export function useRevealMachine(schools) {
     if (!isWobbling) return;
     const target = activeSorted[0];
     if (!target) return;
+
+    // Last school (the eventual winner) skips the wobble entirely and
+    // reveals straight away — see the FLUCTUATING -> LOCKING effect below,
+    // which fires immediately (0ms) in this same case.
+    if (activeIds.length === 1) return;
+
     const targetLine = rankLineScore(axisMin, axisMax, activeIds.length);
 
     // seed so the very first tick steps from somewhere sensible, not from nothing
@@ -237,6 +243,11 @@ export function useRevealMachine(schools) {
     if (!target) return;
     const targetLine = rankLineScore(axisMin, axisMax, activeIds.length);
 
+    // Last school (the winner) skips the fluctuate wait entirely and locks
+    // in immediately instead of wobbling up and down first.
+    const isLast = activeSorted.length === 1;
+    const delay = isLast ? 0 : FLUCTUATE_MS;
+
     const t = setTimeout(() => {
       clearInterval(jitterInterval.current);
       soundManager.stopRoboticLoop();
@@ -247,7 +258,7 @@ export function useRevealMachine(schools) {
           displayScores: sameScoreLine(activeIds, targetLine),
         },
       });
-    }, FLUCTUATE_MS);
+    }, delay);
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
