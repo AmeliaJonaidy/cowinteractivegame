@@ -39,7 +39,17 @@ export default function MysteryBar({
         </motion.div>
       )}
 
-      <div className="relative h-[26rem] w-20 flex items-end overflow-hidden">
+      <div className="relative flex h-[26rem] w-20 items-end overflow-visible">
+        {isRevealing && (
+          <motion.span
+            initial={{ opacity: 0, y: 8, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="absolute left-1/2 z-10 -translate-x-1/2 font-mono text-3xl font-bold text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.75)]"
+            style={{ bottom: `calc(${heightPct}% + 0.45rem)` }}
+          >
+            {Math.round(displayScore)}
+          </motion.span>
+        )}
         <motion.div
           className={`w-full ${
             isRevealing || showStats
