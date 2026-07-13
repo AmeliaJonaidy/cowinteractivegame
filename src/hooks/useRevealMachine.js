@@ -18,9 +18,9 @@ const REVEAL_HOLD_MS = 3000;
 const REFOCUS_MS = 500;
 const FINALE_HOLD_MS = 6500;
 
-function getRankings(schools) {
+function getRankings(schools, rates) {
   return Object.entries(schools)
-    .map(([id, data]) => ({ id, ...data, total: calcTotal(data, conversionRates) }))
+    .map(([id, data]) => ({ id, ...data, total: calcTotal(data, rates) }))
     .sort((a, b) => b.total - a.total)
     .map((s, i) => ({ ...s, rank: i + 1 }));
 }
@@ -149,11 +149,11 @@ function reducer(state, action) {
   }
 }
 
-export function useRevealMachine(schools) {
+export function useRevealMachine(schools, rates = conversionRates) {
   const [state, dispatch] = useReducer(reducer, initialState, getSavedState);
   const jitterInterval = useRef(null);
   const latestScoresRef = useRef({});
-  const rankings = getRankings(schools);
+  const rankings = getRankings(schools, rates);
 
   const activeSorted = rankings
     .filter((s) => !state.revealedIds.includes(s.id))

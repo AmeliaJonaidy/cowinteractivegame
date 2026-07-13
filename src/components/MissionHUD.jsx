@@ -2,7 +2,7 @@ import { Rocket } from "lucide-react";
 
 export default function MissionHUD() {
   return (
-    <div className="absolute right-5 top-5 z-30 w-72 overflow-hidden rounded-xl border border-white/15 bg-space-panel/90 shadow-2xl shadow-black/40 backdrop-blur">
+    <div className="fixed right-5 top-5 z-30 w-[22rem] overflow-hidden rounded-xl border border-white/15 bg-space-panel/90 shadow-2xl shadow-black/40 backdrop-blur">
       {/* Ambient backdrop: soft grid + planet glow, clipped to the card */}
       <div className="pointer-events-none absolute inset-0">
         <div
@@ -23,28 +23,40 @@ export default function MissionHUD() {
           <span className="font-mono text-[10px] font-bold text-ignition drop-shadow">ACTIVE</span>
         </div>
 
-        <div className="relative h-24 px-1">
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 280 96" aria-hidden="true">
+        <div className="relative h-28 px-1">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 352 112" aria-hidden="true">
             <path
-              d="M20 62 C68 18 110 26 138 48 S214 84 258 30"
+              d="M18 84 C38 36 62 34 86 54 C112 78 138 90 162 64 C184 40 194 20 218 34 C244 50 244 76 268 68 C292 60 294 24 318 18"
               fill="none"
               stroke="rgb(79 209 197 / 0.18)"
               strokeWidth="9"
               strokeLinecap="round"
             />
             <path
-              d="M20 62 C68 18 110 26 138 48 S214 84 258 30"
+              d="M18 84 C38 36 62 34 86 54 C112 78 138 90 162 64 C184 40 194 20 218 34 C244 50 244 76 268 68 C292 60 294 24 318 18"
               fill="none"
               stroke="rgb(79 209 197 / 0.9)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeDasharray="8 9"
             />
+            <path
+              d="M318 18 C330 14 338 14 346 10"
+              fill="none"
+              stroke="rgb(255 255 255 / 0.22)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="6 8"
+            />
           </svg>
 
-          <MissionNode label="M1" style={{ left: "3%", top: "44%" }} className="text-white/70" />
-          <MissionNode active label="M2" style={{ left: "48%", top: "26%" }} className="-translate-x-1/2 text-ignition" />
-          <MissionNode label="M3" style={{ left: "92%", top: "8%" }} className="-translate-x-1/2 text-white/70" />
+          <MissionNode label="M1" style={{ left: "2%", top: "60%" }} className="text-white/70" />
+          <MissionNode active label="M2" style={{ left: "44%", top: "42%" }} className="-translate-x-1/2 text-ignition" />
+          <MissionNode label="M3" style={{ left: "91%", top: "9%" }} className="-translate-x-1/2 text-white/70" />
+
+          <span className="absolute right-8 top-1 -rotate-[35deg] font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-white/55">
+            Coming soon
+          </span>
         </div>
       </div>
     </div>

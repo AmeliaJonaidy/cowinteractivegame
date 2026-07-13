@@ -34,7 +34,7 @@ export default function MysteryBar({
           animate={{ opacity: 1, y: 0 }}
           className="mb-3 flex min-h-20 flex-col items-center justify-end gap-1 text-center"
         >
-          <SchoolBadge id={id} logo={school.logo} size={44} />
+          <SchoolBadge id={id} logo={school.logo} size={52} />
           <span className="max-w-28 font-display text-xs font-bold text-ignition leading-tight">{school.name}</span>
         </motion.div>
       )}
@@ -59,7 +59,7 @@ export default function MysteryBar({
         />
       </div>
       {showStats && (
-        <span className="mt-2 font-mono text-xs font-bold text-text-primary">{Math.round(displayScore)} pts</span>
+        <span className="mt-2 font-mono text-xs font-bold text-text-primary">{Math.round(displayScore)} Cows</span>
       )}
       <Tooltip school={school} visible={showStats && hovered} />
     </motion.div>

@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { calcTotal, conversionRates } from "../data/conversionRates";
 
-export default function FacilitatorDashboard({ schools, setSchools, machine }) {
+export default function FacilitatorDashboard({ schools, setSchools, rates = conversionRates, setRates, machine }) {
   const schoolIds = Object.keys(schools);
   const [selectedId, setSelectedId] = useState(schoolIds[0]);
   const [form, setForm] = useState({ normalCows: "", wagyuCows: "", parts: "" });
@@ -17,9 +17,9 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
         wagyuCows: Number(form.wagyuCows) || 0,
         parts: Number(form.parts) || 0,
       },
-      conversionRates
+      rates
     );
-  }, [form]);
+  }, [form, rates]);
 
   function handleSelectSchool(id) {
     setSelectedId(id);
@@ -42,7 +42,14 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
         parts: Number(form.parts) || 0,
       },
     }));
-    setSavedMsg(`Saved for ${selectedId} — total ${previewTotal} pts`);
+    setSavedMsg(`Saved for ${selectedId} — total ${previewTotal} Cows`);
+  }
+
+  function handleRateChange(key, value) {
+    setRates?.((prev) => ({
+      ...prev,
+      [key]: Number(value) || 0,
+    }));
   }
 
   function handleResetScores() {
@@ -97,15 +104,36 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
             onChange={(v) => setForm((f) => ({ ...f, wagyuCows: v }))}
           />
           <Field
-            label="Parts"
+            label="Fuel"
             value={form.parts}
             onChange={(v) => setForm((f) => ({ ...f, parts: v }))}
           />
         </div>
 
+        <div className="mb-4 rounded-lg border border-white/10 bg-space-bg/70 p-3">
+          <h2 className="mb-3 font-display text-xs font-bold tracking-wide text-text-dim">CONVERSION VALUES</h2>
+          <div className="grid grid-cols-3 gap-2">
+            <Field
+              label="Cow"
+              value={rates.normalCow}
+              onChange={(v) => handleRateChange("normalCow", v)}
+            />
+            <Field
+              label="Fuel"
+              value={rates.fuel}
+              onChange={(v) => handleRateChange("fuel", v)}
+            />
+            <Field
+              label="Wagyu Cow"
+              value={rates.wagyuCow}
+              onChange={(v) => handleRateChange("wagyuCow", v)}
+            />
+          </div>
+        </div>
+
         <div className="flex justify-between items-center mb-4 rounded-lg bg-space-bg px-3 py-2 border border-ignition/30">
           <span className="text-xs font-mono text-text-dim">CALCULATED TOTAL</span>
-          <span className="font-mono text-lg text-ignition font-bold">{previewTotal} pts</span>
+          <span className="font-mono text-lg text-ignition font-bold">{previewTotal} Cows</span>
         </div>
 
         <button
@@ -151,7 +179,7 @@ export default function FacilitatorDashboard({ schools, setSchools, machine }) {
           {schoolIds.map((id) => (
             <div key={id} className="flex justify-between font-mono text-xs">
               <span className="text-text-dim">{id}</span>
-              <span>{calcTotal(schools[id], conversionRates)} pts</span>
+              <span>{calcTotal(schools[id], rates)} Cows</span>
             </div>
           ))}
         </div>

@@ -25,9 +25,8 @@ export default function SchoolBadge({ id, logo, size = 48 }) {
     <img
       src={logo}
       alt={`${id} logo`}
-      width={size}
-      height={size}
-      className="rounded-full object-contain bg-white/5"
+      style={{ width: size, height: size, minWidth: size, minHeight: size }}
+      className="block box-border rounded-full border border-white/40 bg-white p-2 object-contain shadow-md shadow-black/25"
       onError={() => setErrored(true)}
     />
   );

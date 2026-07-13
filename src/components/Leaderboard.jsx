@@ -76,12 +76,14 @@ export default function Leaderboard({ schools, machine }) {
   const winner = rankings[0];
   const confettiPieces = useMemo(
     () =>
-      Array.from({ length: 90 }, (_, i) => ({
+      Array.from({ length: 220 }, (_, i) => ({
         id: i,
         left: `${Math.random() * 100}%`,
-        delay: `${Math.random() * 1.2}s`,
-        duration: `${2.6 + Math.random() * 1.8}s`,
+        delay: `${Math.random() * 1.8}s`,
+        duration: `${2.2 + Math.random() * 2.2}s`,
         rotate: `${Math.random() * 360}deg`,
+        drift: `${(Math.random() - 0.5) * 110}px`,
+        scale: 0.75 + Math.random() * 0.95,
       })),
     []
   );
@@ -165,7 +167,7 @@ export default function Leaderboard({ schools, machine }) {
                 <SchoolBadge id={winner.id} logo={schools[winner.id].logo} size={48} />
                 <div className="text-left">
                   <p className="font-display text-xl font-bold text-ignition">{winner.name}</p>
-                  <p className="font-mono text-sm text-text-dim">{winner.total} pts</p>
+                  <p className="font-mono text-sm text-text-dim">{winner.total} Cows</p>
                 </div>
               </div>
             </motion.div>
@@ -190,7 +192,7 @@ export default function Leaderboard({ schools, machine }) {
         </div>
       )}
 
-      {/* Confirmed standings — winner centered podium-style, points legible against the dark bg */}
+      {/* Confirmed standings — winner centered podium-style, totals legible against the dark bg */}
       {revealedSorted.length > 0 && !showAllPolysSelected && (
         <div className="relative z-10 shrink-0 px-12 pb-8">
           <div className="flex items-end justify-center gap-8">
@@ -221,7 +223,7 @@ export default function Leaderboard({ schools, machine }) {
                         : "font-mono text-xs font-semibold text-white/80 drop-shadow"
                     }
                   >
-                    {s.total} pts
+                    {s.total} Cows
                   </span>
                 </motion.div>
               );
@@ -258,6 +260,8 @@ function Confetti({ pieces }) {
             animationDelay: piece.delay,
             animationDuration: piece.duration,
             rotate: piece.rotate,
+            "--confetti-drift": piece.drift,
+            "--confetti-scale": piece.scale,
           }}
         />
       ))}

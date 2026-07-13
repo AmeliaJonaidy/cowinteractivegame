@@ -2,8 +2,9 @@ class SoundManager {
   constructor() {
     this.ctx = null;
     this.robotTimer = null;
+    this.effectVolumeMultiplier = 3;
     this.applauseAudio = new Audio("/sounds/applause.mp3");
-    this.applauseAudio.volume = 0.8;
+    this.applauseAudio.volume = Math.min(1, 0.8 * this.effectVolumeMultiplier);
     this.muted = false;
   }
 
@@ -35,11 +36,12 @@ class SoundManager {
     const startAt = this.ctx.currentTime + when;
     const oscillator = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
+    const effectVolume = volume * this.effectVolumeMultiplier;
 
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(frequency, startAt);
     gain.gain.setValueAtTime(0.0001, startAt);
-    gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(effectVolume, startAt + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
 
     oscillator.connect(gain);
@@ -72,11 +74,12 @@ class SoundManager {
     const source = this.ctx.createBufferSource();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
+    const effectVolume = volume * this.effectVolumeMultiplier;
 
     filter.type = filterType;
     filter.frequency.setValueAtTime(frequency, startAt);
     filter.Q.setValueAtTime(q, startAt);
-    gain.gain.setValueAtTime(volume, startAt);
+    gain.gain.setValueAtTime(effectVolume, startAt);
     gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
 
     source.buffer = buffer;
@@ -175,7 +178,7 @@ class SoundManager {
     whooshFilter.frequency.exponentialRampToValueAtTime(3800, startAt + whooshDuration);
     const whooshGain = this.ctx.createGain();
     whooshGain.gain.setValueAtTime(0.0001, startAt);
-    whooshGain.gain.exponentialRampToValueAtTime(0.22, startAt + 0.35);
+    whooshGain.gain.exponentialRampToValueAtTime(0.22 * this.effectVolumeMultiplier, startAt + 0.35);
     whooshGain.gain.exponentialRampToValueAtTime(0.0001, startAt + whooshDuration);
     whooshSource.connect(whooshFilter);
     whooshFilter.connect(whooshGain);
@@ -191,7 +194,7 @@ class SoundManager {
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(freq, noteStart);
       noteGain.gain.setValueAtTime(0.0001, noteStart);
-      noteGain.gain.exponentialRampToValueAtTime(0.18, noteStart + 0.05);
+      noteGain.gain.exponentialRampToValueAtTime(0.18 * this.effectVolumeMultiplier, noteStart + 0.05);
       noteGain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 1.4);
       osc.connect(noteGain);
       noteGain.connect(this.ctx.destination);

@@ -1,9 +1,15 @@
+import npLogo from "../assets/logos/np.png";
+import nypLogo from "../assets/logos/nyp.png";
+import rpLogo from "../assets/logos/rp.avif";
+import spLogo from "../assets/logos/sp.png";
+import tpLogo from "../assets/logos/tp.png";
+
 export const initialSchools = {
-  RP:  { name: "Republic Polytechnic", logo: "/logos/rp.png", normalCows: 0, wagyuCows: 0, parts: 0 },
-  NYP: { name: "Nanyang Polytechnic",  logo: "/logos/nyp.png", normalCows: 0, wagyuCows: 0, parts: 0 },
-  TP:  { name: "Temasek Polytechnic",  logo: "/logos/tp.png", normalCows: 0, wagyuCows: 0, parts: 0 },
-  NP:  { name: "Ngee Ann Polytechnic", logo: "/logos/np.png", normalCows: 0, wagyuCows: 0, parts: 0 },
-  SP:  { name: "Singapore Polytechnic", logo: "/logos/sp.png", normalCows: 0, wagyuCows: 0, parts: 0 },
+  RP:  { name: "Republic Polytechnic", logo: rpLogo, normalCows: 0, wagyuCows: 0, parts: 0 },
+  NYP: { name: "Nanyang Polytechnic",  logo: nypLogo, normalCows: 0, wagyuCows: 0, parts: 0 },
+  TP:  { name: "Temasek Polytechnic",  logo: tpLogo, normalCows: 0, wagyuCows: 0, parts: 0 },
+  NP:  { name: "Ngee Ann Polytechnic", logo: npLogo, normalCows: 0, wagyuCows: 0, parts: 0 },
+  SP:  { name: "Singapore Polytechnic", logo: spLogo, normalCows: 0, wagyuCows: 0, parts: 0 },
 };
 
 // fallback badge colors, used if a logo file is missing
